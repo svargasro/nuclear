@@ -30,16 +30,16 @@ def plot_nuclear_levels_from_file(txt_path, out_dir=".", threshold=30):
             if abs(dE) < threshold:
 
                 if dE > 0:
-                    offsets[i] += threshold * 0.8
-                    offsets[j] -= threshold * 0.8
+                    offsets[i] += threshold * 0.75
+                    offsets[j] -= threshold * 0.7
                 else:
-                    offsets[j] += threshold * 0.8
-                    offsets[i] -= threshold * 0.8
+                    offsets[j] += threshold * 0.75
+                    offsets[i] -= threshold * 0.75
 
     E_max = max(n["E"] for n in niveles) + 100
 
 
-    fig, ax = plt.subplots(figsize=(4, 8))
+    fig, ax = plt.subplots(figsize=(4, 6))
 
     # Grafica todos los niveles con etiquetas ajustadas
     for idx, n in enumerate(niveles):
@@ -49,20 +49,22 @@ def plot_nuclear_levels_from_file(txt_path, out_dir=".", threshold=30):
 
         ax.hlines(E, -0.3, 0.3, lw=1)#, color='tab:orange')
         # Etiqueta J^π y energía
-        ax.text(-0.5, y_label, label_J, ha='right', va='center')
-        ax.text( 0.5, y_label, f"{E}({unc})", ha='left',  va='center')
+        ax.text(-0.5, y_label, label_J, ha='right', va='center',fontsize=8)
+        ax.text( 0.5, y_label, f"{E}({unc})", ha='left',  va='center',fontsize=8)
 
     # Ajustes de estilo
     for spine in ['top', 'right', 'bottom', 'left']:
         ax.spines[spine].set_visible(False)
+
+    # ax.spines['left'].set_visible(True)
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_xlim(-1, 1)
     ax.set_ylim(-50, E_max)
 
     # Labels inferiores
-    fig.text(0.22, 0.01, r"$J^{\pi}$", ha='left',  va='center', fontsize=10)
-    fig.text(0.90, 0.01, "Energy (keV)", ha='right', va='center', fontsize=10)
+    fig.text(0.22, 0.01, r"$\mathbf{J^{\pi}}$", ha='left',  va='center', fontsize=8, fontweight='bold')
+    fig.text(0.90, 0.01, "Energy (keV)", ha='right', va='center', fontsize=8, fontweight='bold')
 
     plt.tight_layout()
 
