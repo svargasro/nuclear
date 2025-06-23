@@ -185,14 +185,15 @@ def analyze_vibrational_spectrum(niveles, element_name, out_dir):
     # error de R2 aproximado
     # usando propagación: dR2 ~ sqrt((2*(y - y_pred)/(ss_tot))^2 * sigma^2) => omitido por simplicidad
 
-    print(element_name)
-    print("Promedidos: ", y)
-    print("Total: ", E_vals)
+    # print(element_name)
+    # print("Promedidos: ", y)
+    # print("Total: ", E_vals)
 
     # Cálculo de la frecuencia de oscilación
 
     HBAR_KEV_S = 6.582119569e-19 # Constante ħ en keV·s
     omega = m / HBAR_KEV_S  # en s^-1
+    print("ómega", element_name, " ", omega)
 
     # Graficar
     fig, ax = plt.subplots(figsize=(5,4))
@@ -296,7 +297,7 @@ def plot_nuclear_levels_from_file(txt_path, out_dir=".", threshold=30):
 
     # Ajustes de estilo
     for spine in ['top', 'right', 'bottom', 'left']:
-        ax.spines[spine].set_visible(False)
+        ax.spines[spine].set_visible(True)
 
     # ax.spines['left'].set_visible(True)
     ax.set_xticks([])
