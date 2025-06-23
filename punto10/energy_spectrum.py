@@ -3,6 +3,7 @@ import numpy as np
 import os
 import glob
 from scipy import stats
+import seaborn as sns
 
 def parse_uncertainty(E_str_array, unc_str_array):
     """
@@ -40,10 +41,10 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
     x = J * (J + 1)
     y = np.array([n['E'] for n in niveles])
 
-    print(element_name)
-    print("J: ",J)
-    print("x: ",x)
-    print("y: ",y)
+    # print(element_name)
+    # print("J: ",J)
+    # print("x: ",x)
+    # print("y: ",y)
     sigma = np.array([n['unc'] for n in niveles], dtype=float)
     sigma = parse_uncertainty(y,sigma)
 
@@ -65,15 +66,18 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
     se_r = np.sqrt((1 - r**2) / (n - 2))
     R2_err = 2 * abs(r) * se_r
 
+
+    sns.set_style("whitegrid")  # Opcional: puedes elegir otro estilo base si lo prefieres
+    sns.set_context("paper")    # Aplica el contexto "paper" (ajusta tamaño de fuentes, líneas, etc.)
+
     # Graficar
     fig, ax = plt.subplots(figsize=(6, 4))
-    ax.errorbar(x, y, yerr=sigma, fmt='o', ms=2, label='Datos', capsize=1,  ecolor='black')
-
+    ax.errorbar(x, y, yerr=sigma, fmt='o', ms=3, capsize=1,  ecolor='black')
     x_line = np.linspace(min(x), max(x), 100)
-    ax.plot(x_line, m * x_line + b, 'r--', label='Ajuste lineal')
+    ax.plot(x_line, m * x_line + b, '-', label=r'Ajuste lineal: $E=mx+b$ ')
     ax.set_xlabel(r'$J(J+1)$')
     ax.set_ylabel('Energy (keV)')
-    ax.set_title(f'Rotational Spectrum: {element_name}')
+    # ax.set_title(f'Rotational Spectrum: {element_name}')
     ax.legend()
 
     # Anotar resultados
@@ -81,15 +85,84 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
         f'm = {m:.3f} ± {m_err:.3f} keV',
         f'b = {b:.1f} ± {b_err:.1f} keV',
         f'$R^2$ = {R2:.3f} ± {R2_err:.3f}'))
-    ax.text(0.05, 0.95, textstr, transform=ax.transAxes,
-            fontsize=10, va='top', bbox=dict(boxstyle="round,pad=0.3", alpha=0.2))
+    ax.text(0.6, 0.25, textstr, transform=ax.transAxes, fontsize=8, va='top')
 
     # Guardar
     os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, f"{element_name}_rot.pdf")
+    out_path = os.path.join(out_dir, f"rot_{element_name}.pdf")
     fig.savefig(out_path)
     plt.close(fig)
-    print(f">> Rotational analysis saved: {out_path}")
+    print(f">> Análisis rotational guardado: {out_path}")
+
+def analyze_vibrational_spectrum(niveles, element_name, out_dir):
+    """
+    Para núcleos vibracionales, agrupa niveles por número de fonones N=0,1,2...
+    usando un criterio de cercanía: si la separación entre vecinos < (E1 - E0)/3,
+    entonces pertenecen a la banda N=2; calcula E(N) promedio y ajusta E vs N.
+    """
+
+
+
+     # Extraer y ordenar energías
+    E_all = np.array(sorted(n['E'] for n in niveles))
+
+
+    #Incertidumbres
+    sigma = np.array([n['unc'] for n in niveles], dtype=float)
+    sigma = parse_uncertainty(E_all,sigma)
+
+
+    E0, E1 = E_all[0], E_all[1]
+    delta = (E1 - E0)*0.2
+
+    # Niveles a partir de N=2
+    E2_onwards = E_all[2:]
+
+    # Clustering por diferencia con vecino inmediato:
+    clusters = []
+    if len(E2_onwards) > 0:
+        current = [E2_onwards[0]]
+        for prev, curr in zip(E2_onwards, E2_onwards[1:]):
+            if abs(curr - prev) < delta:
+                # el nivel curr está lo bastante cerca de su predecesor
+                current.append(curr)
+            else:
+                clusters.append(current)
+                current = [curr]
+        clusters.append(current)
+
+    # Construir arrays de n y E_n promediada
+    n_vals = [0, 1] + list(range(2, 2 + len(clusters)))
+    En = [E0, E1] + [np.mean(c) for c in clusters]
+
+    # Ajuste lineal: E_n = ħω·n + ħω/2
+    coeffs = np.polyfit(n_vals, En, 1)
+    hw, intercept = coeffs
+
+    print(element_name)
+    print("Completas: ", E_all)
+    print("Promedio: ", En )
+
+    # Gráfico
+    plt.figure(figsize=(5,4))
+    plt.plot(n_vals, En, 'o', label='E$_n$ promedio')
+    x_line = np.linspace(0, n_vals[-1], 100)
+    plt.plot(x_line, hw*x_line + intercept, 'r--',
+             label=f'ħω={hw:.3f} MeV')
+    plt.xticks(n_vals)
+    plt.xlabel('n (número de fonones)')
+    plt.ylabel('E (MeV)')
+    plt.title(f'Modelo vibracional: {element_name}')
+    plt.legend()
+    plt.grid(alpha=0.4)
+
+    # Guardar
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, f"vib_{element_name}.pdf")
+    plt.savefig(path)
+    plt.close()
+    print(f">> Análisis vibracional guardado: {path}")
+
 
 
 def plot_nuclear_levels_from_file(txt_path, out_dir=".", threshold=30):
@@ -114,7 +187,9 @@ def plot_nuclear_levels_from_file(txt_path, out_dir=".", threshold=30):
     if element_name in rot_nuclei:
         analyze_rotational_spectrum(niveles, element_name, out_dir)
 
-
+    vib_nuclei = {"Cd-110-48", "Pd-106-46", "Zr-90-40"}
+    if element_name in vib_nuclei:
+        analyze_vibrational_spectrum(niveles, element_name, out_dir)
 
     #Cálculo de offsets para desplazar etiquetas en caso de tener nivles de energía muy cercanos.
     offsets = [0.0] * len(niveles)
@@ -134,6 +209,10 @@ def plot_nuclear_levels_from_file(txt_path, out_dir=".", threshold=30):
 
     E_max = max(n["E"] for n in niveles) + 100
 
+
+
+    sns.set_style("whitegrid")  # Opcional: puedes elegir otro estilo base si lo prefieres
+    sns.set_context("paper")    # Aplica el contexto "paper" (ajusta tamaño de fuentes, líneas, etc.)
 
     fig, ax = plt.subplots(figsize=(4, 6))
 
