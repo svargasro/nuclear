@@ -55,11 +55,7 @@ def parse_uncertainty(E_str_array, unc_str_array):
     return unc_int_array * 10**(-returned_sigma)
 
 def analyze_rotational_spectrum(niveles, element_name, out_dir):
-    """
-    Grafica E vs J(J+1) con incertidumbres, ajusta linealmente y reporta
-    pendiente, intercepto y R^2 con incertidumbre propagada.
-    """
-    # Preparar datos
+
     J = np.array([n['J'] for n in niveles])
     x = J * (J + 1)
     y = np.array([n['E'] for n in niveles])
@@ -77,25 +73,28 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
     m, b = fit
     m_err, b_err = np.sqrt(np.diag(cov))
 
-    # Cálculo de R^2 y su incertidumbre aproximada
+    # Cálculo de R^2
     y_pred = m * x + b
     ss_res = np.sum((y - y_pred)**2)
     ss_tot = np.sum((y - np.mean(y))**2)
     R2 = 1 - ss_res / ss_tot
 
-    # Calcular r y error estándar de r
+
     r, _ = stats.pearsonr(x, y)
     n = len(x)
     se_r = np.sqrt((1 - r**2) / (n - 2))
     R2_err = 2 * abs(r) * se_r
 
 
-    sns.set_style("whitegrid")  # Opcional: puedes elegir otro estilo base si lo prefieres
-    sns.set_context("paper")    # Aplica el contexto "paper" (ajusta tamaño de fuentes, líneas, etc.)
+    sns.set_style("whitegrid")
+    sns.set_context("paper")
 
     # Graficar
     fig, ax = plt.subplots(figsize=(6, 4))
     ax.errorbar(x, y, yerr=sigma, fmt='o', ms=3, capsize=1,  ecolor='black')
+    print(element_name)
+    print("Máx error: ", np.max(sigma))
+
     x_line = np.linspace(min(x), max(x), 100)
     ax.plot(x_line, m * x_line + b, '-', label=r'Ajuste lineal: $E=m \cdot J(J+1)+b$ ')
     ax.set_xlabel(r'$J(J+1)$')
@@ -105,7 +104,7 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
 
 
 
-    # Anotar resultados
+
     # textstr = '\n'.join((
     #     f'm = {m:.3f} ± {m_err:.3f} keV',
     #     f'b = {b:.1f} ± {b_err:.1f} keV',
@@ -115,8 +114,8 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
     # Momento de inercia I = ħ^2/(2m)
     # ħc = 197300 keV·fm
     hbarc = 197300  # keV·fm
-    I = (hbarc**2) / (2 * m)           # in keV·fm^2/c^2
-    I_err = I * (m_err / m)            # propagate error
+    I = (hbarc**2) / (2 * m)           # keV·fm^2/c^2
+    I_err = I * (m_err / m)
 
     m_str  = fmt_with_uncertainty(m,   m_err,   " keV")
     b_str  = fmt_with_uncertainty(b,   b_err,   " keV")
@@ -141,7 +140,7 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
 
 def analyze_vibrational_spectrum(niveles, element_name, out_dir):
 
-    # Extraer y ordenar datos
+
     datos = sorted(niveles, key=lambda n: n['E'])
     E_vals = np.array([d['E'] for d in datos])
     unc_ints = np.array([d['unc'] for d in datos])
@@ -153,14 +152,14 @@ def analyze_vibrational_spectrum(niveles, element_name, out_dir):
     sigma0, sigma1 = sigmas[:2]
     delta = (E1 - E0)*0.2
 
-    # Clustering en niveles >= E_vals[2]
+    # Organización para promedios
     clusters = []
     errors = []
     if len(E_vals) > 2:
         current = [E_vals[2]]
         current_sig = [sigmas[2]]
         for prev, curr, sig in zip(E_vals[2:], E_vals[3:], sigmas[3:]):
-            if abs(curr - prev) < delta:
+            if abs(curr - prev) < delta: #Si están muy cerca, se añaden al mismo cluster.
                 current.append(curr)
                 current_sig.append(sig)
             else:
@@ -171,9 +170,9 @@ def analyze_vibrational_spectrum(niveles, element_name, out_dir):
         clusters.append(current)
         errors.append(np.sqrt(np.sum(np.array(current_sig)**2)) / len(current_sig))
 
-    # Preparar vectores n, En, sigma_n
+
     n_vals = [0, 1] + list(range(2, 2 + len(clusters)))
-    En = [E0, E1] + [np.mean(c) for c in clusters]
+    En = [E0, E1] + [np.mean(c) for c in clusters] #Promedios de cada cluster
     sigma_n = [sigma0, sigma1] + errors
 
     #Se ignora el valor de 0,0.
@@ -195,22 +194,19 @@ def analyze_vibrational_spectrum(niveles, element_name, out_dir):
     ss_res = np.sum((y - y_pred)**2)
     ss_tot = np.sum((y - np.mean(y))**2)
     R2 = 1 - ss_res / ss_tot
-    # error de R2 aproximado
-    # usando propagación: dR2 ~ sqrt((2*(y - y_pred)/(ss_tot))^2 * sigma^2) => omitido por simplicidad
+
+
 
     # print(element_name)
     # print("Promedidos: ", y)
     # print("Total: ", E_vals)
 
-    # Cálculo de la frecuencia de oscilación
-
-    HBAR_KEV_S = 6.582119569e-19 # Constante ħ en keV·s
-    omega = m / HBAR_KEV_S  # en s^-1
-    print("ómega", element_name, " ", omega)
 
     # Graficar
     fig, ax = plt.subplots(figsize=(5,4))
     ax.errorbar(n_vals, En, yerr=sigma_n, fmt='o', ms=2, capsize=1, ecolor="black")
+    print(element_name)
+    print("Máx error: ", np.max(sigma_n))
     x_line = np.linspace(0, n_vals[-1], 100)
     ax.plot(x_line, m*x_line + b, '-', label=r'Ajuste lineal: $E_n = m \cdot n+b$')
     ax.set_xticks(n_vals)
@@ -294,12 +290,12 @@ def plot_nuclear_levels_from_file(txt_path, out_dir=".", threshold=30):
 
 
 
-    sns.set_style("whitegrid")  # Opcional: puedes elegir otro estilo base si lo prefieres
-    sns.set_context("paper")    # Aplica el contexto "paper" (ajusta tamaño de fuentes, líneas, etc.)
+    sns.set_style("whitegrid")
+    sns.set_context("paper")
 
     fig, ax = plt.subplots(figsize=(4, 6))
 
-    # Grafica todos los niveles con etiquetas ajustadas
+    # Grafica de todos los niveles con etiquetas ajustadas
     for idx, n in enumerate(niveles):
         E, unc = n["E"], n["unc"]
         label_J = fr"${n['J']}^{n['parity']}$"
