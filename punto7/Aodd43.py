@@ -44,6 +44,7 @@ mass_vals = mass_excess(Z_vals, A)
 Z_exp = np.array([17, 18, 19, 20, 21, 22, 23])
 mass_exp_amu = np.array([-24.16, -32.01, -36.57, -38.40, -36.18, -29.31, -17.92]) / amu_MeV
 
+
 sns.set_style("whitegrid")
 sns.set_context("paper")
 
