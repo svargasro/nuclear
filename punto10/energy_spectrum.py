@@ -99,7 +99,7 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
     x_line = np.linspace(min(x), max(x), 100)
     ax.plot(x_line, m * x_line + b, '-', label=r'Ajuste lineal: $E=m \cdot J(J+1)+b$ ')
     ax.set_xlabel(r'$J(J+1)$')
-    ax.set_ylabel('Energy (keV)')
+    ax.set_ylabel('Energía (keV)')
     # ax.set_title(f'Rotational Spectrum: {element_name}')
     ax.legend()
 
@@ -112,16 +112,23 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
     #     f'$R^2$ = {R2:.3f} ± {R2_err:.3f}'))
     # ax.text(0.6, 0.25, textstr, transform=ax.transAxes, fontsize=8, va='top')
 
+    # Momento de inercia I = ħ^2/(2m)
+    # ħc = 197300 keV·fm
+    hbarc = 197300  # keV·fm
+    I = (hbarc**2) / (2 * m)           # in keV·fm^2/c^2
+    I_err = I * (m_err / m)            # propagate error
 
     m_str  = fmt_with_uncertainty(m,   m_err,   " keV")
     b_str  = fmt_with_uncertainty(b,   b_err,   " keV")
+    I_str = fmt_with_uncertainty(I, I_err,"")
 
     textstr = "\n".join([
         rf"$m = {m_str}$",
         rf"$b = {b_str}$",
-        rf"$R^2 = {R2:.3f}$"
+        rf"$R^2 = {R2:.3f}$",
+        rf"$I = {I_str} \frac{{keV}}{{c^2}}·fm^2$"
     ])
-    ax.text(0.6, 0.25, textstr, transform=ax.transAxes,
+    ax.text(0.55, 0.25, textstr, transform=ax.transAxes,
             fontsize=8, va='top')
 
     # Guardar
@@ -130,6 +137,7 @@ def analyze_rotational_spectrum(niveles, element_name, out_dir):
     fig.savefig(out_path)
     plt.close(fig)
     print(f">> Análisis rotational guardado: {out_path}")
+
 
 def analyze_vibrational_spectrum(niveles, element_name, out_dir):
 
@@ -168,6 +176,11 @@ def analyze_vibrational_spectrum(niveles, element_name, out_dir):
     En = [E0, E1] + [np.mean(c) for c in clusters]
     sigma_n = [sigma0, sigma1] + errors
 
+    #Se ignora el valor de 0,0.
+    En = En[1:]
+    n_vals = n_vals[1:]
+    sigma_n = sigma_n[1:]
+
     # Ajuste ponderado En vs n
     x = np.array(n_vals)
     y = np.array(En)
@@ -197,7 +210,7 @@ def analyze_vibrational_spectrum(niveles, element_name, out_dir):
 
     # Graficar
     fig, ax = plt.subplots(figsize=(5,4))
-    ax.errorbar(n_vals, En, yerr=sigma_n, fmt='o', ms=2, capsize=0, ecolor="black")
+    ax.errorbar(n_vals, En, yerr=sigma_n, fmt='o', ms=2, capsize=1, ecolor="black")
     x_line = np.linspace(0, n_vals[-1], 100)
     ax.plot(x_line, m*x_line + b, '-', label=r'Ajuste lineal: $E_n = m \cdot n+b$')
     ax.set_xticks(n_vals)
@@ -208,7 +221,7 @@ def analyze_vibrational_spectrum(niveles, element_name, out_dir):
 
     # Preparar texto con resultados
     # textstr = '\n'.join([
-    #     rf'$m = {m:.1f}\pm{m_err:.1f}\ \mathrm{{keV}}$',
+    #     rf'$m = {m:.1f}\pm{m_err:.1f}\ \mathrm{{keV}}$,
     #     rf'$b = {b:.4f}\pm{b_err:.4f}\ \mathrm{{keV}}$',
     #     rf'$R^2 = {R2:.3f}$',
     #     # rf'$\omega = \dfrac{{m}}{{\hbar}} \approx {omega:.3e}\ \mathrm{{s}}^{{-1}}$'
@@ -217,11 +230,12 @@ def analyze_vibrational_spectrum(niveles, element_name, out_dir):
 
     m_str  = fmt_with_uncertainty(m,   m_err,   " keV")
     b_str  = fmt_with_uncertainty(b,   b_err,   " keV")
+    omega_str  = fmt_with_uncertainty(m,   m_err,   "")
 
     textstr = "\n".join([
         rf"$m = {m_str}$",
-        rf"$b = {b_str}$",
-        rf"$R^2 = {R2:.3f}$"
+        rf"$R^2 = {R2:.3f}$",
+        rf"$\omega = {omega_str}$  $\frac{{keV}}{{\hbar}}$"
     ])
     ax.text(0.6, 0.25, textstr, transform=ax.transAxes,
             fontsize=8, va='top')
@@ -270,11 +284,11 @@ def plot_nuclear_levels_from_file(txt_path, out_dir=".", threshold=30):
             if abs(dE) < threshold:
 
                 if dE > 0:
-                    offsets[i] += threshold * 0.7
-                    offsets[j] -= threshold * 0.7
+                    offsets[i] += threshold * 0.65
+                    offsets[j] -= threshold * 0.65
                 else:
-                    offsets[j] += threshold * 0.7
-                    offsets[i] -= threshold * 0.7
+                    offsets[j] += threshold * 0.65
+                    offsets[i] -= threshold * 0.65
 
     E_max = max(n["E"] for n in niveles) + 100
 
@@ -307,7 +321,7 @@ def plot_nuclear_levels_from_file(txt_path, out_dir=".", threshold=30):
 
     # Labels inferiores
     fig.text(0.22, 0.01, r"$\mathbf{J^{\pi}}$", ha='left',  va='center', fontsize=8, fontweight='bold')
-    fig.text(0.90, 0.01, "Energy (keV)", ha='right', va='center', fontsize=8, fontweight='bold')
+    fig.text(0.90, 0.01, "Energía (keV)", ha='right', va='center', fontsize=8, fontweight='bold')
 
     plt.tight_layout()
 
