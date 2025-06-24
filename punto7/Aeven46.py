@@ -49,8 +49,8 @@ sns.set_context("paper")
 
 
 plt.figure(figsize=(8, 5))
-plt.plot(Z_vals, mass_vals_even, label='even-even', linestyle='-')
-plt.plot(Z_vals, mass_vals_odd, label='odd-odd', linestyle='-')
+plt.plot(Z_vals, mass_vals_even, label='par-par', linestyle='-')
+plt.plot(Z_vals, mass_vals_odd, label='impar-impar', linestyle='-')
 plt.plot(Z_exp, mass_exp_amu,'ko', zorder=5, label='exp data')
 
 
@@ -81,7 +81,7 @@ for z, label in beta_transitions.items():
 
 plt.xticks(np.arange(16, 26, 1)) 
 plt.xlabel("Z")
-plt.ylabel("Mass excess [amu]")
+plt.ylabel("Exceso de Masa [amu]")
 plt.grid(True)
 plt.legend()
 plt.tight_layout()

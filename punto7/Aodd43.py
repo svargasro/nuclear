@@ -78,7 +78,7 @@ for z, label in transitions.items():
 
 plt.xticks(np.arange(15, 26, 1)) 
 plt.xlabel("Z")
-plt.ylabel("Mass excess [amu]")
+plt.ylabel("Exceso de Masa [amu]")
 plt.grid(True)
 plt.tight_layout()
 plt.savefig('A43.pdf')

@@ -57,6 +57,9 @@ data = {
     },
     "31P": {
         "protons": {
+            r"$1s_{1/2}$": [+1, -1],
+            r"$1p_{3/2}$": [+1, -1, +1, -1],
+            r"$1p_{1/2}$": [+1, -1],
             r"$1d_{5/2}$": [+1, -1, +1, -1, +1, -1],
             r"$2s_{1/2}$": [+1]
         },
@@ -72,8 +75,6 @@ data = {
 
 def draw_and_save_centered(nucleus, side):
     fig, ax = plt.subplots(figsize=(6, 4))
-    sym = "π" if side == "protons" else "ν"
-    ax.set_title(f"{nucleus} ({sym})", fontsize=14)
     ax.set_xlim(0, 6)
     ax.set_ylim(-0.5, 4.5)
     ax.axis('off')
@@ -82,7 +83,7 @@ def draw_and_save_centered(nucleus, side):
     for label, y in levels:
         ax.hlines(y, 0.5, 5.5, color='orange')
         ax.text(5.6, y, label, va='center', fontsize=12)
-    ax.text(0.3, 4.8, sym, fontsize=16)
+
 
     # Dibujar ocupaciones centradas
     occ = data[nucleus][side]
